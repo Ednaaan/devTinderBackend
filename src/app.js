@@ -1,6 +1,7 @@
 const express = require("express");
-
+const connectDB = require("./config/database");
 const app = express();
+const User = require("./model/user");
 
 // app.get("/user",(req,res)=>{
 //     res.send({firstName:"Adnan", lastName: "Sohail"});
@@ -36,21 +37,49 @@ const app = express();
 
 // )
 
-const {adminAuth} = require("./middlewares/auth");
+// const {adminAuth} = require("./middlewares/auth");
 
-app.use("/admin",adminAuth);
-
-
-app.get("/admin/getAllData",(req,res)=>{{
-    res.send("All Data Send");
-}});
-
-app.get("/admin/deleteUser",(req,res)=>{{
-    res.send("User Data Deleted");
-}});
+// app.use("/admin",adminAuth);
 
 
-app.listen(2409, ()=>{
-    console.log("Server is running smoothly");
+// app.get("/admin/getAllData",(req,res)=>{{
+//     res.send("All Data Send");
+// }});
 
+// app.get("/admin/deleteUser",(req,res)=>{{
+//     res.send("User Data Deleted");
+// }});
+
+app.post("/signup", async(req,res)=>{
+    //creating a new instance of the user model
+    const user = new User({
+        firstName:"Adnan",
+        lastName:"Sohail",
+        emailId:"adnan@sohail.com",
+        password: "adnan123",
+
+    });
+   try{
+    await user.save();
+    res.send("User Added Succesfully");
+   }
+   catch(err){
+    res.status(401).send("Error in saving the user details....")
+   }
+})
+
+
+
+
+connectDB()
+  .then(()=>{
+    console.log("Database connecrtion established");
+    app.listen(2409, ()=>{
+        console.log("Server is running smoothly");
+    
+    });
+
+}).catch((err)=>{
+    console.error("Database cannoot be connected");
 });
+
