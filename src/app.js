@@ -55,8 +55,8 @@ app.post("/signup", async(req,res)=>{
     const user = new User({
         firstName:"Adnan",
         lastName:"Sohail",
-        emailId:"adnan@sohail.com",
-        password: "adnan123",
+        emailId:"adnan@s****.com",
+        password: "*******",
 
     });
    try{
