@@ -2,6 +2,9 @@ const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
 const User = require("./model/user");
+const {validateSignUpData} = require("./utils/validation");
+
+const bcrypt = require("bcrypt");
 
 // app.get("/user",(req,res)=>{
 //     res.send({firstName:"Adnan", lastName: "Sohail"});
@@ -49,24 +52,133 @@ const User = require("./model/user");
 // app.get("/admin/deleteUser",(req,res)=>{{
 //     res.send("User Data Deleted");
 // }});
-
+app.use(express.json());
+// sign up
 app.post("/signup", async(req,res)=>{
+    // Validation of data
+    try{
+        validateSignUpData(req);
+    // Encrypt password
+
+    const {firstName, lastName, emailId,password} = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    // console.log(passwordHash);
+    
+    
+
+
+
+
     //creating a new instance of the user model
     const user = new User({
-        firstName:"Adnan",
-        lastName:"Sohail",
-        emailId:"adnan@s****.com",
-        password: "*******",
-
-    });
-   try{
+        firstName, 
+        lastName, 
+        emailId,
+        password:passwordHash});
+   
     await user.save();
     res.send("User Added Succesfully");
    }
    catch(err){
-    res.status(401).send("Error in saving the user details....")
+    res.status(400).send("Error in saving the user details...." + err.message);
    }
-})
+});
+
+// Login Api
+
+app.post("/login",async(req,res)=>{
+    try {
+        const {emailId, password } = req.body;
+
+        const user = await User.findOne({emailId: emailId});
+        if(!user){
+            throw new Error("Invalid Credential");
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (isPasswordValid) {
+            return res.status(200).json({ message: "User logged in successfully!" });
+        } else {
+            return res.status(401).json({ message: "Incorrect password" });
+        }
+
+
+    } catch (err) {
+        res.status(400).send("Error:" + err.message);
+
+        
+    }
+
+});
+
+// Feed API - Get/Feed - get all the users from the databsae;
+app.get("/user", async(req,res)=>{
+     const userEmail = req.body.emailId;
+
+    try{
+        const user = await User.findOne({emailId :  userEmail});
+        if(!user){
+            res.status(404).send("User not found");
+        }
+        else{
+            res.send(user);
+        }
+    }
+    catch(err){
+        res.status(401).send("Something went wrong");
+    }
+
+});
+
+app.get("/feed", async(req,res)=>{
+
+   try{
+       const user = await User.find({});
+           res.send(user);
+       
+   }
+   catch(err){
+       res.status(401).send("Something went wrong");
+   }
+
+});
+
+// Delete a user 
+app.delete("/delete", async(req,res)=>{
+    const userId = req.body.userId;
+    try {
+        const user = await User.findByIdAndDelete({_id : userId});
+        res.send("User Deleted successfully");
+    } catch (err) {
+        res.status(401).send("something went wrong");
+        
+    }
+
+});
+
+
+app.patch("/user", async(req,res)=>{
+    const userId = req.body.userId;
+    const data = req.body;
+
+    try {
+        const user = await User.findByIdAndUpdate({_id: userId}, data,{
+            returnDocument: "after",
+            runValidators:true,
+        });
+        console.log(user);
+        res.send("User updated successfully");
+    } catch (err) {
+        res.status(400).send("Update failed"+ err.message);
+        
+    }
+});
+
+
+
+
+
 
 
 

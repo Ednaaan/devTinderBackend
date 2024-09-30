@@ -1,26 +1,75 @@
 const mongoose = require('mongoose'); // importing mongoose
+const validator = require('validator');
 
 const userSchema = new mongoose.Schema({  // creating schema 
     firstName : {
-        type:String
+        type:String,
+        required: true,
+        minLength: 4,
+        maxLength: 25,
     },
     lastName : {
         type:String
     },
     emailId : {
-        type:String
+        type:String,
+        trim:true,
+        lowercase: true,
+        required: true,
+        unique: true,
+        validate(value){
+            if(!validator.isEmail(value)){
+                throw new Error("Invalid Email: " + value);
+            }
+
+        }
+
+
     },
     password : {
-        type:String
+        type:String,
+        required: true,
+        validate(value){
+            if(!validator.isStrongPassword(value)){
+                throw new Error("Password is weak: " + value);
+            }
+
+        }
     },
     age : {
-        type:String
+        type:Number,
+        min:18,
+
     },
     gender : {
-        type:String
+        type:String,
+        validate(value){
+            if(!["male","female","Other"].includes(value)){
+                throw new Error("Gender is not valid");
+            }
+        },
     },
+    photoUrl: {
+        type:String,
+        default: "https://cdn.vectorstock.com/i/1000v/95/56/user-profile-icon-avatar-or-person-vector-45089556.jpg"
 
-});
+    },
+    about:{
+        type: String,
+        default: "About Section ",
+
+    },
+    skills:{
+        type: [String],
+
+    }
+   
+
+},
+ {
+    timestamps: true,
+ },
+);
 
 const userModel = mongoose.model("User",userSchema); // creating a model
 module.exports = userModel; // exporting 
