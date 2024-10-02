@@ -6,6 +6,10 @@ const {validateSignUpData} = require("./utils/validation");
 
 const bcrypt = require("bcrypt");
 
+const cookieParser = require("cookie-parser");
+const Jwt = require("jsonwebtoken");
+const {userAuth} = require("./middlewares/auth");
+
 // app.get("/user",(req,res)=>{
 //     res.send({firstName:"Adnan", lastName: "Sohail"});
 
@@ -53,6 +57,7 @@ const bcrypt = require("bcrypt");
 //     res.send("User Data Deleted");
 // }});
 app.use(express.json());
+app.use(cookieParser());
 // sign up
 app.post("/signup", async(req,res)=>{
     // Validation of data
@@ -87,7 +92,7 @@ app.post("/signup", async(req,res)=>{
 
 // Login Api
 
-app.post("/login",async(req,res)=>{
+app.post("/login", async(req,res)=>{
     try {
         const {emailId, password } = req.body;
 
@@ -97,7 +102,20 @@ app.post("/login",async(req,res)=>{
         }
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
+
+
         if (isPasswordValid) {
+
+            // Create a Token
+
+            const token = await user.getJWT();
+            console.log(token);
+
+            //Add the token to the cookie and send it back to the user;
+            res.cookie("token", token,{
+                expires: new Date(Date.now() + 3600000),
+            });
+
             return res.status(200).json({ message: "User logged in successfully!" });
         } else {
             return res.status(401).json({ message: "Incorrect password" });
@@ -111,6 +129,27 @@ app.post("/login",async(req,res)=>{
     }
 
 });
+// Profile API
+app.get("/profile", userAuth,  async(req,res)=> {
+    try{
+    const user = req.user;
+    
+    res.send(user);
+    } catch(err){
+        res.status(400).send("Error: " + err.message);
+    }
+});
+
+
+
+// Send Connectiinn request
+
+app.post("/sendConnectionRequest", userAuth, async(req,res)=>{
+    const user = req.user;
+    res.send(user.firstName + "send a connection request");
+})
+
+
 
 // Feed API - Get/Feed - get all the users from the databsae;
 app.get("/user", async(req,res)=>{
@@ -185,7 +224,7 @@ app.patch("/user", async(req,res)=>{
 
 connectDB()
   .then(()=>{
-    console.log("Database connecrtion established");
+    console.log("Database connection established");
     app.listen(2409, ()=>{
         console.log("Server is running smoothly");
     
